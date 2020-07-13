@@ -5,6 +5,33 @@ AllCops:
 
 Layout/LineLength:
   Max: 100
+  Exclude:
+    - test/**/*
+
+Metrics/AbcSize:
+  Exclude:
+    - test/**/*
+
+Metrics/BlockLength:
+  Enabled: false
+
+Metrics/ParameterLists:
+  Exclude:
+    - test/**/*
+
+Metrics/MethodLength:
+  Enabled: false
+
+Naming/MethodParameterName:
+  Exclude:
+    - test/**/*
+
+Style/Documentation:
+  Enabled: false
 
 Style/FrozenStringLiteralComment:
   Safe: true
+
+Style/OptionalArguments:
+  Exclude:
+    - test/**/*
