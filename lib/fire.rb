@@ -1,9 +1,19 @@
 # frozen_string_literal: true
 
 require 'fire/version'
+require 'xoptparse'
+require 'pp'
 
 class Fire
+  METHODS_CODE = 'public_methods(false)+private_methods(false)'
+  TOPLEVEL_METHODS = TOPLEVEL_BINDING.eval(METHODS_CODE)
+
   class << self
+    def fire(*args, **kwargs, &block)
+      res = new(*args, **kwargs, &block).run
+      puts res.is_a?(String) ? res : res.pretty_inspect unless res.nil?
+    end
+
     def parameters_call(func, func_parameters, params, error = true)
       args, kwargs = method_arguments(func_parameters, params)
       raise ArgumentError, "unknown keywords: #{params.keys.join(', ')}" if error && !params.empty?
@@ -44,10 +54,13 @@ class Fire
     end
     private :method_arguments
 
+    def new_method?(func)
+      func.is_a?(Method) && func.owner.is_a?(Class) && func.name == :new
+    end
+
     def trace_parameters(trace_func) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
       is_proc = trace_func.is_a?(Proc)
-      is_init = !is_proc && trace_func.owner.is_a?(Class) && trace_func.name == :new
-      func = is_init ? trace_func.receiver.instance_method(:initialize) : trace_func
+      func = new_method?(trace_func) ? trace_func.receiver.instance_method(:initialize) : trace_func
 
       mock_kwargs = nil
       func.parameters.each do |type, name|
@@ -91,6 +104,80 @@ class Fire
       rescue TracePointTerminate # rubocop:disable Lint/SuppressedException
       end
     end
+  end
+
+  def initialize(rec = nil, program_name: nil, &block)
+    if rec.is_a?(Symbol)
+      main = TOPLEVEL_BINDING.receiver
+      rec = (main.method(rec) if main.private_methods.include?(rec) || main.methods.include?(rec))
+    end
+    @rec = rec || block || proc {}
+    @program_name = program_name
+  end
+
+  def parser
+    XOptionParser.new do |opt|
+      opt.program_name = @program_name if @program_name
+      @current_run_params = define_method_options(opt, @rec)
+    end
+  end
+
+  def define_method_options(opt, func) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+    convert_classes = [].tap do |a|
+      opt.send(:visit, :tap) do |el|
+        el.atype.each do |key, _val|
+          a << key if key.is_a?(Class) && ![Object, NilClass].include?(key)
+        end
+      end
+    end
+
+    func_parameters = self.class.trace_parameters(func)
+    if func_parameters.any? { |type, *_args| %i[req opt rest keyreq key].include?(type) }
+      opt.separator ''
+      opt.separator 'Options:'
+    end
+    func_parameters.each do |type, name, default|
+      conv_class = convert_classes.find { |kl| default.is_a?(kl) }
+      klass = conv_class || Object
+      desc = %i[opt key].include?(type) ? "(default #{default})" : ''
+      case type
+      when :req
+        opt.on(name.to_s, klass, desc, &:itself)
+      when :opt
+        opt.on("[#{name}]", klass, desc, &:itself)
+      when :rest
+        opt.on("[#{name}...]", klass, desc, &:itself)
+      when :keyreq, :key
+        long = if [TrueClass, FalseClass].include?(conv_class)
+                 "--[no-]#{name} [FLAG]"
+               else
+                 "--#{name} #{(conv_class || String).to_s.upcase}"
+               end
+        opt.on(long, klass, desc, &:itself)
+      end
+    end
+
+    [func, func_parameters]
+  end
+  private :define_method_options
+
+  def parse!(argv = ARGV)
+    @opt = parser
+    @params = {}
+    @opt.parse!(argv, into: @params)
+  end
+
+  def run!(*args)
+    parse!(*args)
+    func, func_parameters = @current_run_params
+    self.class.parameters_call(func, func_parameters, @params)
+  end
+
+  def run(*args)
+    run!(*args)
+  rescue XOptionParser::ParseError
+    puts @opt.help
+    exit
   end
 
   class TracePointTerminate < StandardError

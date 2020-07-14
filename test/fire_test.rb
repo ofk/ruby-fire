@@ -21,6 +21,10 @@ end
 
 define_method(:mock_define_method) { |a, b, m = 1, n = mock_noop, *rest, x, y, z:, w:, k: 1, l: mock_noop2, **kwrest, &blk| }
 
+def mock_method2(a, b = 1, *rest, x:, y: 1, z: false)
+  [a, b, rest, x, y, z]
+end
+
 class MockClass
   def self.static_method(a, b, m = 1, n = mock_noop, *rest, x, y, z:, w:, k: 1, l: mock_noop2, **kwrest, &blk); end
 
@@ -100,5 +104,19 @@ class FireTest < Minitest::Test
     f5 = MockClass2.new(1).method(:g)
     f5p = Fire.trace_parameters(f5)
     assert { Fire.parameters_call(f5, f5p, { c: 2 }) == [1, 2] }
+  end
+
+  def test_run_method
+    assert { Fire.new(:mock_simple, program_name: 'test').parser.help == "Usage: test a [b] [c]\n\nOptions:\n    a\n    [b]                              (default 1)\n    [c]                              (default 2)\n" }
+    assert_raises(XOptionParser::MissingArgument) { Fire.new(:mock_simple).run!([]) }
+    assert_raises(XOptionParser::InvalidOption) { Fire.new(:mock_simple).run!(%w[1 -d 4]) }
+    assert { Fire.new(:mock_simple).run(%w[1 2 3]) == ['1', 2, 3] }
+    assert { Fire.new(:mock_simple).run(%w[1 -c 3]) == ['1', 1, 3] }
+    assert { Fire.new(:mock_simple).run(%w[-a 0]) == ['0', 1, 2] }
+
+    assert { Fire.new(:mock_method2, program_name: 'test').parser.help == "Usage: test [options] a [b] [rest...]\n\nOptions:\n    a\n    [b]                              (default 1)\n    [rest...]\n        --x STRING\n        --y INTEGER                  (default 1)\n        --[no-]z [FLAG]              (default false)\n" }
+    assert { Fire.new(:mock_method2).run(%w[--x 1 --y 2 3 4 5 6]) == ['3', 4, %w[5 6], '1', 2, false] }
+    assert { Fire.new(:mock_method2).run(%w[--z yes --y 1 --x 2 1 2]) == ['1', 2, [], '2', 1, true] }
+    assert { Fire.new(:mock_method2).run(%w[--z no --x 1 2]) == ['2', 1, [], '1', 1, false] }
   end
 end
