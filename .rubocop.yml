@@ -10,6 +10,7 @@ Layout/LineLength:
 
 Metrics/AbcSize:
   Exclude:
+    - examples/**/*
     - test/**/*
 
 Metrics/BlockLength:
@@ -27,6 +28,7 @@ Metrics/MethodLength:
 
 Naming/MethodParameterName:
   Exclude:
+    - examples/**/*
     - test/**/*
 
 Style/Documentation:
@@ -38,3 +40,7 @@ Style/FrozenStringLiteralComment:
 Style/OptionalArguments:
   Exclude:
     - test/**/*
+
+Style/SpecialGlobalVars:
+  Exclude:
+    - examples/**/*
