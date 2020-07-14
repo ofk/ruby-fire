@@ -8,11 +8,16 @@ end
 
 alias mock_noop2 mock_noop
 
-def mock_simple(a, b = 1, c = 2); end
+def mock_simple(a, b = 1, c = 2)
+  [a, b, c]
+end
 
 alias mock_simple2 mock_simple
 
-def mock_method(a, b, m = 1, n = mock_noop, *rest, x, y, z:, w:, k: 1, l: mock_noop2, **kwrest, &blk); end
+def mock_method(a, b, m = 1, n = mock_noop, *rest, x, y, z:, w:, k: 1, l: mock_noop2, **kwrest, &blk)
+  blk&.call
+  [a, b, m, n, rest, x, y, z, w, k, l, kwrest]
+end
 
 define_method(:mock_define_method) { |a, b, m = 1, n = mock_noop, *rest, x, y, z:, w:, k: 1, l: mock_noop2, **kwrest, &blk| }
 
@@ -22,6 +27,20 @@ class MockClass
   def initialize(a, b, m = 1, n = mock_noop, *rest, x, y, z:, w:, k: 1, l: mock_noop2, **kwrest, &blk); end
 
   def method(a, b, m = 1, n = mock_noop, *rest, x, y, z:, w:, k: 1, l: mock_noop2, **kwrest, &blk); end
+end
+
+class MockClass2
+  def self.f(a = 1)
+    a
+  end
+
+  def initialize(b)
+    @b = b
+  end
+
+  def g(c)
+    [@b, c]
+  end
 end
 
 class FireTest < Minitest::Test
@@ -54,5 +73,32 @@ class FireTest < Minitest::Test
 
     assert { Fire.trace_parameters(File.method(:symlink)) == [[:req, nil, nil], [:req, nil, nil]] }
     assert { Fire.trace_parameters(File.method(:utime)) == [[:rest, nil, nil]] }
+  end
+
+  def test_parameters_call
+    f1 = method(:mock_simple)
+    f1p = Fire.trace_parameters(f1)
+    assert { Fire.parameters_call(f1, f1p, { a: 10, b: 20, c: 30 }) == [10, 20, 30] }
+    assert { Fire.parameters_call(f1, f1p, { a: 10, c: 30 }) == [10, 1, 30] }
+    assert { Fire.parameters_call(f1, f1p, { a: 10 }) == [10, 1, 2] }
+    assert_raises(ArgumentError) { Fire.parameters_call(f1, f1p, { a: 10, b: 20, c: 30, d: 40 }) }
+    assert_raises(ArgumentError) { Fire.parameters_call(f1, f1p, {}) }
+
+    f2 = method(:mock_method)
+    f2p = Fire.trace_parameters(f2)
+    assert { Fire.parameters_call(f2, f2p, { a: 1, b: 2, m: 3, n: 4, rest: [5, 6], x: 7, y: 8, z: 9, w: 10, k: 11, l: 12, d: 13, e: 14 }) == [1, 2, 3, 4, [5, 6], 7, 8, 9, 10, 11, 12, { d: 13, e: 14 }] }
+    assert { Fire.parameters_call(f2, f2p, { a: 1, b: 2, x: 7, y: 8, z: 9, w: 10 }) == [1, 2, 1, 0, [], 7, 8, 9, 10, 1, 0, {}] }
+
+    f3 = MockClass2.method(:f)
+    f3p = Fire.trace_parameters(f3)
+    assert { Fire.parameters_call(f3, f3p, { a: 0 }).zero? }
+
+    f4 = MockClass2.method(:new)
+    f4p = Fire.trace_parameters(f4)
+    assert { Fire.parameters_call(f4, f4p, { b: 1 }).is_a?(MockClass2) }
+
+    f5 = MockClass2.new(1).method(:g)
+    f5p = Fire.trace_parameters(f5)
+    assert { Fire.parameters_call(f5, f5p, { c: 2 }) == [1, 2] }
   end
 end
