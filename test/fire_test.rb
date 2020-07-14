@@ -119,4 +119,18 @@ class FireTest < Minitest::Test
     assert { Fire.new(:mock_method2).run(%w[--z yes --y 1 --x 2 1 2]) == ['1', 2, [], '2', 1, true] }
     assert { Fire.new(:mock_method2).run(%w[--z no --x 1 2]) == ['2', 1, [], '1', 1, false] }
   end
+
+  def test_run_modules
+    assert { Fire.new(program_name: 'test').parser.instance_variable_get(:@commands)['mock_simple'].block.call.help == "Usage: test mock_simple a [b] [c]\n\nOptions:\n    a\n    [b]                              (default 1)\n    [c]                              (default 2)\n" }
+    assert { Fire.new.run(%w[mock_simple 1 2 3]) == ['1', 2, 3] }
+    assert_raises(XOptionParser::InvalidArgument) { Fire.new.run!(%w[mock_simple 1 2 3 4]) }
+
+    assert { Fire.new(MockClass2.new(1), program_name: 'test').parser.help == "Usage: test <command>\n\nCommands:\n    g\n" }
+    assert_raises(OptionParser::InvalidArgument) { Fire.new(MockClass2.new(1)).run!([]) == '' }
+    assert { Fire.new(MockClass2.new(1)).run(%w[g 2]) == [1, '2'] }
+
+    assert { Fire.new(MockClass2, program_name: 'test').parser.help == "Usage: test b <command>\n\nCommands:\n    f\n\nOptions:\n    b\n\nCommands:\n    g\n" }
+    assert_raises(OptionParser::InvalidArgument) { Fire.new(MockClass2).run!(%w[1]) }
+    assert { Fire.new(MockClass2).run!(%w[f 2]) == 2 }
+  end
 end

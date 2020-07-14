@@ -111,16 +111,46 @@ class Fire
       main = TOPLEVEL_BINDING.receiver
       rec = (main.method(rec) if main.private_methods.include?(rec) || main.methods.include?(rec))
     end
-    @rec = rec || block || proc {}
+    @rec = rec || block || TOPLEVEL_BINDING
     @program_name = program_name
+    @current_run_params = nil
   end
 
   def parser
     XOptionParser.new do |opt|
       opt.program_name = @program_name if @program_name
-      @current_run_params = define_method_options(opt, @rec)
+      define_options(opt, [], @rec)
     end
   end
+
+  def define_options(opt, keys, rec) # rubocop:disable Metrics/AbcSize
+    case rec
+    when Proc, Method, UnboundMethod
+      @current_run_params = [*define_method_options(opt, rec), keys]
+    when Binding
+      methods = rec.eval(METHODS_CODE)
+      methods -= TOPLEVEL_METHODS if rec == TOPLEVEL_BINDING
+      define_commands(opt, keys, methods) do |name|
+        rec.eval("method(#{name.inspect})")
+      end
+    when Module
+      define_commands(opt, keys, rec.methods(false)) do |name|
+        rec.method(name)
+      end
+
+      if rec.respond_to?(:new)
+        define_options(opt, keys, rec.method(:new))
+        define_commands(opt, keys, rec.instance_methods(false)) do |name|
+          current_run(false).method(name)
+        end
+      end
+    else
+      define_commands(opt, keys, rec.public_methods(false)) do |name|
+        rec.method(name)
+      end
+    end
+  end
+  private :define_options
 
   def define_method_options(opt, func) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
     convert_classes = [].tap do |a|
@@ -161,16 +191,44 @@ class Fire
   end
   private :define_method_options
 
-  def parse!(argv = ARGV)
+  def define_commands(opt, keys, method_names)
+    return if method_names.empty?
+
+    opt.separator ''
+    opt.separator 'Commands:'
+    method_names.each do |name|
+      opt.command(name) do |sub_opt|
+        sub_rec = yield name
+        define_options(sub_opt, keys + [name], sub_rec)
+      end
+    end
+  end
+  private :define_commands
+
+  def parse!(argv = ARGV) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity
     @opt = parser
     @params = {}
-    @opt.parse!(argv, into: @params)
+    args = @opt.parse!(argv, into: @params)
+    if !args.empty? || @current_run_params.nil? || self.class.new_method?(@current_run_params.first)
+      raise XOptionParser::InvalidArgument
+    end
+  rescue XOptionParser::ParseError => e
+    @current_run_params&.last&.each do |key|
+      @opt = @opt.instance_variable_get(:@commands)[key.to_s].block.call
+    end
+    raise e
   end
+
+  def current_run(error = true)
+    func, func_parameters, keys = @current_run_params
+    params = keys.empty? ? @params : @params.dig(*keys)
+    self.class.parameters_call(func, func_parameters, params, error)
+  end
+  private :current_run
 
   def run!(*args)
     parse!(*args)
-    func, func_parameters = @current_run_params
-    self.class.parameters_call(func, func_parameters, @params)
+    current_run
   end
 
   def run(*args)
