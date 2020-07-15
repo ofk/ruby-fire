@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'fire/version'
+require 'ruby-fire/version'
 require 'xoptparse'
 require 'pp'
 

@@ -2,17 +2,17 @@
 
 lib = File.expand_path('lib', __dir__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'fire/version'
+require 'ruby-fire/version'
 
 Gem::Specification.new do |spec|
-  spec.name          = 'fire'
+  spec.name          = 'ruby-fire'
   spec.version       = Fire::VERSION
   spec.authors       = ['ofk']
   spec.email         = ['ofkjpn+github@gmail.com']
 
   spec.summary       = ''
   spec.description   = ''
-  spec.homepage      = 'https://github.com/ofk/fire'
+  spec.homepage      = 'https://github.com/ofk/ruby-fire'
   spec.license       = 'MIT'
 
   # Prevent pushing this gem to RubyGems.org. To allow pushes either set the 'allowed_push_host'

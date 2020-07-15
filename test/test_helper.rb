@@ -6,7 +6,7 @@ SimpleCov.start do
 end
 
 $LOAD_PATH.unshift File.expand_path('../lib', __dir__)
-require 'fire'
+require 'ruby-fire'
 
 require 'minitest/autorun'
 require 'minitest/power_assert'

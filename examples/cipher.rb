@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'fire'
+require 'ruby-fire'
 
 def caesar_encode(n = 0, text = '')
   text.chars.map { |char| _caesar_shift_char(n, char) } * ''

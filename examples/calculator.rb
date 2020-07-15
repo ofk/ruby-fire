@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'fire'
+require 'ruby-fire'
 
 class Calculator
   def double(number)
