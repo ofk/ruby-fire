@@ -26,6 +26,10 @@ Metrics/ParameterLists:
 Metrics/MethodLength:
   Enabled: false
 
+Naming/FileName:
+  Exclude:
+    - lib/ruby-fire.rb
+
 Naming/MethodParameterName:
   Exclude:
     - examples/**/*
@@ -33,9 +37,6 @@ Naming/MethodParameterName:
 
 Style/Documentation:
   Enabled: false
-
-Style/FrozenStringLiteralComment:
-  Safe: true
 
 Style/OptionalArguments:
   Exclude:
