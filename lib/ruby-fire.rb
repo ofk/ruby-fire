@@ -169,7 +169,7 @@ class Fire
     func_parameters.each do |type, name, default|
       conv_class = convert_classes.find { |kl| default.is_a?(kl) }
       klass = conv_class || Object
-      desc = %i[opt key].include?(type) ? "(default #{default})" : ''
+      desc = %i[opt key].include?(type) ? "(default #{default.nil? ? 'nil' : default})" : ''
       case type
       when :req
         opt.on(name.to_s, klass, desc, &:itself)
