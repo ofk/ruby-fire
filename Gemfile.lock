@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     ruby-fire (0.2.0)
-      xoptparse (~> 0.6.0)
+      xoptparse (~> 0.6.1)
 
 GEM
   remote: https://rubygems.org/
@@ -45,7 +45,7 @@ GEM
       simplecov-html (~> 0.11)
     simplecov-html (0.12.2)
     unicode-display_width (1.7.0)
-    xoptparse (0.6.0)
+    xoptparse (0.6.1)
 
 PLATFORMS
   ruby
