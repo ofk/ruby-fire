@@ -118,6 +118,7 @@ class FireTest < Minitest::Test
     assert { Fire.new(:mock_method2).run(%w[--x 1 --y 2 3 4 5 6]) == ['3', 4, %w[5 6], '1', 2, false] }
     assert { Fire.new(:mock_method2).run(%w[--z yes --y 1 --x 2 1 2]) == ['1', 2, [], '2', 1, true] }
     assert { Fire.new(:mock_method2).run(%w[--z --y 1 --x 2 1 2]) == ['1', 2, [], '2', 1, true] }
+    assert { Fire.new(:mock_method2).run(%w[--y 1 --x 2 --z 1 2]) == ['1', 2, [], '2', 1, true] }
     assert { Fire.new(:mock_method2).run(%w[--z no --x 1 2]) == ['2', 1, [], '1', 1, false] }
     assert { Fire.new(:mock_method2).run(%w[--no-z --x 1 2]) == ['2', 1, [], '1', 1, false] }
   end
