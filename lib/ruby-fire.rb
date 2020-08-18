@@ -178,6 +178,7 @@ class Fire
       when :rest
         opt.on("[#{name}...]", klass, desc, &:itself)
       when :keyreq, :key
+        klass = TrueClass if conv_class == FalseClass
         long = if [TrueClass, FalseClass].include?(conv_class)
                  "--[no-]#{name} [FLAG]"
                else

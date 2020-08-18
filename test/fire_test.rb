@@ -117,7 +117,9 @@ class FireTest < Minitest::Test
     assert { Fire.new(:mock_method2, program_name: 'test').parser.help == "Usage: test [options] a [b] [rest...]\n\nOptions:\n    a\n    [b]                              (default 1)\n    [rest...]\n        --x STRING\n        --y INTEGER                  (default 1)\n        --[no-]z [FLAG]              (default false)\n" }
     assert { Fire.new(:mock_method2).run(%w[--x 1 --y 2 3 4 5 6]) == ['3', 4, %w[5 6], '1', 2, false] }
     assert { Fire.new(:mock_method2).run(%w[--z yes --y 1 --x 2 1 2]) == ['1', 2, [], '2', 1, true] }
+    assert { Fire.new(:mock_method2).run(%w[--z --y 1 --x 2 1 2]) == ['1', 2, [], '2', 1, true] }
     assert { Fire.new(:mock_method2).run(%w[--z no --x 1 2]) == ['2', 1, [], '1', 1, false] }
+    assert { Fire.new(:mock_method2).run(%w[--no-z --x 1 2]) == ['2', 1, [], '1', 1, false] }
   end
 
   def test_run_modules
