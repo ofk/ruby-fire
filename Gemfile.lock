@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     ruby-fire (0.1.0)
-      xoptparse (~> 0.5.0)
+      xoptparse (~> 0.6.0)
 
 GEM
   remote: https://rubygems.org/
@@ -45,19 +45,19 @@ GEM
       simplecov-html (~> 0.11)
     simplecov-html (0.12.2)
     unicode-display_width (1.7.0)
-    xoptparse (0.5.0)
+    xoptparse (0.6.0)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
   bundler (~> 1.17)
-  ruby-fire!
   minitest (~> 5.0)
   minitest-power_assert
   minitest-reporters
   rake (~> 12.3.3)
   rubocop
+  ruby-fire!
   simplecov
 
 BUNDLED WITH
