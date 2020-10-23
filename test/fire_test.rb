@@ -47,6 +47,12 @@ class MockClass2
   end
 end
 
+class MockClass3
+  def t(a)
+    a
+  end
+end
+
 class FireTest < Minitest::Test
   def test_that_it_has_a_version_number
     refute { ::Fire::VERSION.nil? }
@@ -131,9 +137,11 @@ class FireTest < Minitest::Test
     assert { Fire.new(MockClass2.new(1), program_name: 'test').parser.help == "Usage: test <command>\n\nCommands:\n    g\n" }
     assert_raises(OptionParser::InvalidArgument) { Fire.new(MockClass2.new(1)).run!([]) == '' }
     assert { Fire.new(MockClass2.new(1)).run(%w[g 2]) == [1, '2'] }
+    assert { Fire.new(MockClass3.new).run(%w[t x]) == 'x' }
 
     assert { Fire.new(MockClass2, program_name: 'test').parser.help == "Usage: test b <command>\n\nCommands:\n    f\n\nOptions:\n    b\n\nCommands:\n    g\n" }
     assert_raises(OptionParser::InvalidArgument) { Fire.new(MockClass2).run!(%w[1]) }
     assert { Fire.new(MockClass2).run!(%w[f 2]) == 2 }
+    assert { Fire.new(MockClass3).run(%w[t x]) == 'x' }
   end
 end
